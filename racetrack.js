@@ -17,7 +17,7 @@ module.exports = class RaceTrack {
 		return ((timeSlot < BOOKING_START_TIME) || (timeSlot > endTime));
 	}
 
-	getTotalHours(startTimeString, endTimeString) {
+	#getTotalHours(startTimeString, endTimeString) {
 		const [startTimeHours, startTimeMins] = startTimeString.split(':');
 		const [endTimeHours, endTimeMins] = endTimeString.split(':');
 
@@ -30,7 +30,7 @@ module.exports = class RaceTrack {
 		return totalHours;
 	}
 
-	addTime(timeString, timeToAdd) {
+	#addTime(timeString, timeToAdd) {
 		const [hour, minutes] = timeString.split(':');
 		const mins = (hour * 60) + (+minutes) + (+timeToAdd);
 
@@ -40,7 +40,7 @@ module.exports = class RaceTrack {
 		return (`${hoursString}:${minsString}`);
 	}
 
-	vacancyCheck(vehicleType, entryTime, exitTime) {
+	#vacancyCheck(vehicleType, entryTime, exitTime) {
 		let countOfVehiclesVip = 0;
 		let countOfVehiclesRegular = 0;
 
@@ -94,9 +94,9 @@ module.exports = class RaceTrack {
 			return;
 		}
 
-		const exitTime = this.addTime(entryTime, 3 * 60);
+		const exitTime = this.#addTime(entryTime, 3 * 60);
 
-		const trackVacancy = this.vacancyCheck(vehicleType, entryTime, exitTime);
+		const trackVacancy = this.#vacancyCheck(vehicleType, entryTime, exitTime);
 
 		if (trackVacancy.regularVehiclesCount < 1 && ((trackVacancy.vipVehiclesCount < 1) || (vehicleType === 'BIKE'))) {
 			console.log('RACE_TRACK_FULL');
@@ -144,7 +144,7 @@ module.exports = class RaceTrack {
 			exitTime,
 		} = vehicleData;
 
-		const trackVacancy = this.vacancyCheck(vehicleType, exitTime, newExitTime);
+		const trackVacancy = this.#vacancyCheck(vehicleType, exitTime, newExitTime);
 
 		if (trackVacancy.regularVehiclesCount < 1 && ((trackVacancy.vipVehiclesCount < 1) || (vehicleType === 'BIKE'))) {
 			console.log('RACE_TRACK_FULL');
@@ -182,9 +182,9 @@ module.exports = class RaceTrack {
 
 			// for additional booking period
 
-			if (this.addTime(booking.entryTime, 15) >= booking.exitTime) return;
+			if (this.#addTime(booking.entryTime, 15) >= booking.exitTime) return;
 
-			const totalHours = this.getTotalHours(booking.entryTime, booking.exitTime);
+			const totalHours = this.#getTotalHours(booking.entryTime, booking.exitTime);
 
 			if (booking.trackType === TRACK_TYPE.VIP) {
 				vipTrackIncome += (50 * totalHours);
