@@ -27,7 +27,7 @@ exports.BOOKING_START_TIME = '13:00';
 
 exports.BOOKING_END_TIME = '17:00';
 
-exports.ADDITIONAL_END_TIME = '19:00';
+exports.ADDITIONAL_END_TIME = '20:00';
 
 exports.BOOKING_TYPE = {
 	BOOKING: 1,
