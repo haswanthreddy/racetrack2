@@ -51,3 +51,13 @@ exports.BOOK = 'BOOK';
 exports.REVENUE = 'REVENUE';
 
 exports.ADDITIONAL = 'ADDITIONAL';
+
+exports.ADDITIONAL_BOOKING_CHARGES_PER_HOUR = 50;
+
+exports.GRACE_PERIOD = 15;
+
+exports.DEFAULT_BOOKING_TIME_IN_HOURS = 3;
+
+exports.HOURS_IN_A_DAY = 24;
+
+exports.MINS_IN_A_HOUR = 60;

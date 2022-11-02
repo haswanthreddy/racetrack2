@@ -7,9 +7,14 @@ const {
 	BOOKING_TYPE,
 	ADDITIONAL_END_TIME,
 	COST_PER_HOUR,
+	ADDITIONAL_BOOKING_CHARGES_PER_HOUR,
+	GRACE_PERIOD,
+	DEFAULT_BOOKING_TIME_IN_HOURS,
+	HOURS_IN_A_DAY,
+	MINS_IN_A_HOUR,
 } = require('./constants');
 
-module.exports = class RaceTrack {
+module.exports = class Racetrack {
 	#bookingData = [];
 
 	#checkForInvalidTimeSlot(timeSlot, bookingType) {
@@ -21,21 +26,21 @@ module.exports = class RaceTrack {
 		const [startTimeHours, startTimeMins] = startTimeString.split(':');
 		const [endTimeHours, endTimeMins] = endTimeString.split(':');
 
-		const differenceInMins = (endTimeHours * 60 + (+endTimeMins))
-        - (startTimeHours * 60 + (+startTimeMins));
+		const differenceInMins = (endTimeHours * MINS_IN_A_HOUR + (+endTimeMins))
+        - (startTimeHours * MINS_IN_A_HOUR + (+startTimeMins));
 
-		const totalHours = Math.floor(differenceInMins / 60)
-        + (((differenceInMins / 60) - Math.floor(differenceInMins / 60)) > 0 ? 1 : 0);
+		const totalHours = Math.floor(differenceInMins / MINS_IN_A_HOUR)
+        + (((differenceInMins / MINS_IN_A_HOUR) - Math.floor(differenceInMins / MINS_IN_A_HOUR)) > 0 ? 1 : 0);
 
 		return totalHours;
 	}
 
 	#addTime(timeString, timeToAdd) {
 		const [hour, minutes] = timeString.split(':');
-		const mins = (hour * 60) + (+minutes) + (+timeToAdd);
+		const mins = (hour * MINS_IN_A_HOUR) + (+minutes) + (+timeToAdd);
 
-		const hoursString = (mins % (24 * 60) / 60 | 0) < 10 ? '0' : `${mins % (24 * 60) / 60 | 0}`;
-		const minsString = (mins % 60) < 10 ? '0' : `${mins % 60}`;
+		const hoursString = (mins % (HOURS_IN_A_DAY * MINS_IN_A_HOUR) / MINS_IN_A_HOUR | 0) < 10 ? '0' : `${mins % (HOURS_IN_A_DAY * MINS_IN_A_HOUR) / MINS_IN_A_HOUR | 0}`;
+		const minsString = (mins % MINS_IN_A_HOUR) < 10 ? '0' : `${mins % MINS_IN_A_HOUR}`;
 
 		return (`${hoursString}:${minsString}`);
 	}
@@ -76,6 +81,10 @@ module.exports = class RaceTrack {
 		};
 	}
 
+	#addBookingData(booking) {
+		this.#bookingData.push(booking);
+	}
+
 	book(vehicleType, vehicleNo, entryTime) {
 		if (!(vehicleNo && entryTime && vehicleType)) {
 			console.log('MISSING_REQUIRED _ARGUMENTS');
@@ -87,14 +96,12 @@ module.exports = class RaceTrack {
 			return;
 		}
 
-		const isInvalid = this.#checkForInvalidTimeSlot(entryTime, BOOKING_TYPE.BOOKING);
-
-		if (isInvalid) {
+		if (this.#checkForInvalidTimeSlot(entryTime, BOOKING_TYPE.BOOKING)) {
 			console.log('INVALID_ENTRY_TIME');
 			return;
 		}
 
-		const exitTime = this.#addTime(entryTime, 3 * 60);
+		const exitTime = this.#addTime(entryTime, DEFAULT_BOOKING_TIME_IN_HOURS * MINS_IN_A_HOUR);
 
 		const trackVacancy = this.#vacancyCheck(vehicleType, entryTime, exitTime);
 
@@ -103,16 +110,11 @@ module.exports = class RaceTrack {
 			return;
 		}
 
-		const booking = {
-			vehicleType,
-			entryTime,
-			vehicleNo,
-			trackType: trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP,
-			bookingType: BOOKING_TYPE.BOOKING,
-			exitTime,
-		};
+		const trackType = trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP;
 
-		this.#bookingData.push(booking);
+		this.#addBookingData({
+			vehicleNo, entryTime, vehicleType, trackType, bookingType: BOOKING_TYPE.BOOKING, exitTime,
+		});
 
 		console.log('SUCCESS');
 	}
@@ -123,8 +125,7 @@ module.exports = class RaceTrack {
 			return;
 		}
 
-		const isInvalid = this.#checkForInvalidTimeSlot(newExitTime, BOOKING_TYPE.ADDITIONAL);
-		if (isInvalid) {
+		if (this.#checkForInvalidTimeSlot(newExitTime, BOOKING_TYPE.ADDITIONAL)) {
 			console.log('INVALID_EXIT_TIME');
 			return;
 		}
@@ -150,47 +151,66 @@ module.exports = class RaceTrack {
 			return;
 		}
 
-		const bookingAddition = {
-			entryTime: exitTime,
-			exitTime: newExitTime,
-			vehicleType,
-			vehicleNo,
-			trackType: trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP,
-			bookingType: BOOKING_TYPE.ADDITIONAL,
-		};
+		const trackType = trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP;
 
-		this.#bookingData.push(bookingAddition);
+		this.#addBookingData({
+			entryTime: exitTime, exitTime: newExitTime, vehicleType, vehicleNo, trackType, bookingType: BOOKING_TYPE.ADDITIONAL,
+		});
 
 		console.log('SUCCESS');
 	}
 
-	revenue() {
+	#revenueFromBooking() {
 		let vipTrackIncome = 0;
 		let regularTrackIncome = 0;
 
 		this.#bookingData.forEach((booking) => {
-			// for booking period
-			if (booking.bookingType === BOOKING_TYPE.BOOKING) {
-				if (booking.trackType === TRACK_TYPE.VIP) {
-					vipTrackIncome += (COST_PER_HOUR.VIP[booking.vehicleType] * 3);
-				} else {
-					regularTrackIncome += (COST_PER_HOUR.REGULAR[booking.vehicleType] * 3);
-				}
-				return;
+			if (booking.bookingType !== BOOKING_TYPE.BOOKING) return;
+
+			if (booking.trackType === TRACK_TYPE.VIP) {
+				vipTrackIncome += (COST_PER_HOUR.VIP[booking.vehicleType] * DEFAULT_BOOKING_TIME_IN_HOURS);
+			} else {
+				regularTrackIncome += (COST_PER_HOUR.REGULAR[booking.vehicleType] * DEFAULT_BOOKING_TIME_IN_HOURS);
 			}
+		});
 
-			// for additional booking period
+		return {
+			vipTrackIncome,
+			regularTrackIncome,
+		};
+	}
 
-			if (this.#addTime(booking.entryTime, 15) >= booking.exitTime) return;
+	#revenueFromAdditionalBooking() {
+		let vipTrackIncome = 0;
+		let regularTrackIncome = 0;
+
+		this.#bookingData.forEach((booking) => {
+			if (booking.bookingType !== BOOKING_TYPE.ADDITIONAL) return;
+
+			if (this.#addTime(booking.entryTime, GRACE_PERIOD) >= booking.exitTime) return;
 
 			const totalHours = this.#getTotalHours(booking.entryTime, booking.exitTime);
 
 			if (booking.trackType === TRACK_TYPE.VIP) {
-				vipTrackIncome += (50 * totalHours);
+				vipTrackIncome += (ADDITIONAL_BOOKING_CHARGES_PER_HOUR * totalHours);
 			} else {
-				regularTrackIncome += (50 * totalHours);
+				regularTrackIncome += (ADDITIONAL_BOOKING_CHARGES_PER_HOUR * totalHours);
 			}
 		});
+
+		return {
+			vipTrackIncome,
+			regularTrackIncome,
+		};
+	}
+
+	revenue() {
+		const additionalRevenue = this.#revenueFromAdditionalBooking();
+		const bookingRevenue = this.#revenueFromBooking();
+
+		const regularTrackIncome = additionalRevenue.regularTrackIncome + bookingRevenue.regularTrackIncome;
+
+		const vipTrackIncome = additionalRevenue.vipTrackIncome + bookingRevenue.vipTrackIncome;
 
 		console.log(`${regularTrackIncome} ${vipTrackIncome}`);
 	}
