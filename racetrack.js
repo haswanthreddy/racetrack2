@@ -99,7 +99,7 @@ module.exports = class RaceTrack {
 		const trackVacancy = this.#vacancyCheck(vehicleType, entryTime, exitTime);
 
 		if (trackVacancy.regularVehiclesCount < 1 && ((trackVacancy.vipVehiclesCount < 1) || (vehicleType === 'BIKE'))) {
-			console.log('RACE_TRACK_FULL');
+			console.log('RACETRACK_FULL');
 			return;
 		}
 
@@ -124,7 +124,6 @@ module.exports = class RaceTrack {
 		}
 
 		const isInvalid = this.#checkForInvalidTimeSlot(newExitTime, BOOKING_TYPE.ADDITIONAL);
-
 		if (isInvalid) {
 			console.log('INVALID_EXIT_TIME');
 			return;
@@ -147,7 +146,7 @@ module.exports = class RaceTrack {
 		const trackVacancy = this.#vacancyCheck(vehicleType, exitTime, newExitTime);
 
 		if (trackVacancy.regularVehiclesCount < 1 && ((trackVacancy.vipVehiclesCount < 1) || (vehicleType === 'BIKE'))) {
-			console.log('RACE_TRACK_FULL');
+			console.log('RACETRACK_FULL');
 			return;
 		}
 
