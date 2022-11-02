@@ -81,10 +81,6 @@ module.exports = class Racetrack {
 		};
 	}
 
-	#addBookingData(booking) {
-		this.#bookingData.push(booking);
-	}
-
 	book(vehicleType, vehicleNo, entryTime) {
 		if (!(vehicleNo && entryTime && vehicleType)) {
 			console.log('MISSING_REQUIRED _ARGUMENTS');
@@ -110,11 +106,16 @@ module.exports = class Racetrack {
 			return;
 		}
 
-		const trackType = trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP;
+		const booking = {
+			vehicleType,
+			entryTime,
+			vehicleNo,
+			trackType: trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP,
+			bookingType: BOOKING_TYPE.BOOKING,
+			exitTime,
+		};
 
-		this.#addBookingData({
-			vehicleNo, entryTime, vehicleType, trackType, bookingType: BOOKING_TYPE.BOOKING, exitTime,
-		});
+		this.#bookingData.push(booking);
 
 		console.log('SUCCESS');
 	}
@@ -151,11 +152,17 @@ module.exports = class Racetrack {
 			return;
 		}
 
-		const trackType = trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP;
+		const bookingAddition = {
+			entryTime: exitTime,
+			exitTime: newExitTime,
+			vehicleType,
+			vehicleNo,
+			trackType: trackVacancy.regularVehiclesCount >= 1 ? TRACK_TYPE.REGULAR : TRACK_TYPE.VIP,
+			bookingType: BOOKING_TYPE.ADDITIONAL,
+		};
 
-		this.#addBookingData({
-			entryTime: exitTime, exitTime: newExitTime, vehicleType, vehicleNo, trackType, bookingType: BOOKING_TYPE.ADDITIONAL,
-		});
+		this.#bookingData.push(bookingAddition);
+
 
 		console.log('SUCCESS');
 	}
