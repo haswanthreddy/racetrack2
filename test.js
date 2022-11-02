@@ -1,89 +1,298 @@
-//Add your tests here
 const sinon = require('sinon');
 const assert = require('assert');
-const { handleInput } = require('./geektrust')
+const Racetrack = require('./racetrack');
+const {
+	INVALID_ENTRY_TIME, MISSING_REQUIRED_PARAMETERS, SUCCESS, RACETRACK_FULL, INVALID_EXIT_TIME,
+} = require('./constants');
 
-const sample_input_1 = [
-    'BOOK BIKE M40 14:00',
-    'BOOK CAR O34 15:00',
-    'BOOK SUV A66 11:00',
-    'ADDITIONAL M40 17:40',
-    'ADDITIONAL O34 20:50',
-    'REVENUE'
-]
+describe('BOOKING', () => {
+	describe('check for INVALID_ENTRY_TIME', () => {
+		it('when entryTime earlier than BOOKING START TIME (13:00) command: BOOK SUV A66 11:00', () => {
+			const racetrack = new Racetrack();
 
-const sample_output_1 = [
-    'SUCCESS',
-    'SUCCESS',
-    'INVALID_ENTRY_TIME',
-    'SUCCESS',
-    'INVALID_EXIT_TIME',
-    '590 0'
-]
+			const command = 'SUV A66 11:00'.split(' ');
+			const [vehicleType, vehicleNo, entryTime] = command;
 
-const sample_input_2 = [
-    'BOOK SUV XY4 12:30',
-    'BOOK SUV A56 13:10',
-    'BOOK CAR AB1 14:20',
-    'BOOK BIKE BIK1 13:00',
-    'BOOK BIKE BIK2 14:00',
-    'ADDITIONAL BIK2 17:50',
-    'REVENUE'
-]
+			const spy = sinon.spy(console, 'log');
 
-const sample_output_2 = [
-    'INVALID_ENTRY_TIME',
-    'SUCCESS',
-    'SUCCESS',
-    'SUCCESS',
-    'SUCCESS',
-    'SUCCESS',
-    '1370 0'
-]
+			racetrack.book(vehicleType, vehicleNo, entryTime);
 
-const sample_input_3 = [
-    'BOOK SUV M40 14:00',
-    'BOOK SUV O34 15:00',
-    'BOOK SUV XY4 13:00',
-    'BOOK SUV A56 13:10',
-    'BOOK SUV AB1 14:20',
-    'BOOK SUV S45 15:30',
-    'BOOK SUV XY22 17:00',
-    'BOOK SUV B56 18:00',
-    'REVENUE',
-]
+			assert(spy.calledWith(INVALID_ENTRY_TIME));
+			console.log.restore();
+		});
 
-const sample_output_3 = [
-    'SUCCESS',
-    'SUCCESS',
-    'SUCCESS',
-    'RACETRACK_FULL',
-    'RACETRACK_FULL',
-    'RACETRACK_FULL',
-    'SUCCESS',
-    'INVALID_ENTRY_TIME',
-    '1800 900',    
-]
+		it('when entryTime later than LAST BOOKING ACCEPTED TIME (17:00) command: BOOK SUV A66 17:10', () => {
+			const racetrack = new Racetrack();
 
-describe('sample input 1', function() {
+			const command = 'SUV A66 17:10'.split(' ');
+			const [vehicleType, vehicleNo, entryTime] = command;
 
-    sample_input_1.map((input, index)=>{
+			const spy = sinon.spy(console, 'log');
 
-        describe(input, function() {
-            it(`should return: ${sample_output_1[index]}`, function() {
-                let spy = sinon.spy(console, 'log')
+			racetrack.book(vehicleType, vehicleNo, entryTime);
 
-                handleInput(input.trim().split(' '))
-                
-                assert(spy.calledWith(sample_output_1[index]));
+			assert(spy.calledWith(INVALID_ENTRY_TIME));
+			console.log.restore();
+		});
+	});
 
-                console.log.restore();
-            });
-        });
-    });
+	describe('check for MISSING_REQUIRED_PARAMETERS', () => {
+		describe('when one among vehicleNo, vehicleType, entryTime', () => {
+			it('missing parameter vehicleNo', () => {
+				const racetrack = new Racetrack();
+
+				const command = 'SUV A66 17:10'.split(' ');
+
+				const vehicleType = undefined;
+				const vehicleNo = command[1];
+				const entryTime = command[2];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(MISSING_REQUIRED_PARAMETERS));
+				console.log.restore();
+			});
+
+			it('missing parameter vehicleType', () => {
+				const racetrack = new Racetrack();
+
+				const command = 'SUV A66 17:10'.split(' ');
+
+				const vehicleType = command[0];
+				const vehicleNo = undefined;
+				const entryTime = command[2];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(MISSING_REQUIRED_PARAMETERS));
+				console.log.restore();
+			});
+
+			it('missing parameter entryTime', () => {
+				const racetrack = new Racetrack();
+
+				const command = 'SUV A66 17:10'.split(' ');
+
+				const vehicleType = command[0];
+				const vehicleNo = command[1];
+				const entryTime = undefined;
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(MISSING_REQUIRED_PARAMETERS));
+				console.log.restore();
+			});
+		});
+	});
+
+	describe('check for BOOKING', () => {
+		describe('should log SUCCESS on successful allocation of racetrack else RACETRACK_FULL should be the response', () => {
+			const racetrack = new Racetrack();
+
+			it('should log SUCCESS for command BOOK SUV M40 14:00', () => {
+				const command = 'BOOK SUV M40 14:00'.split(' ');
+
+				const vehicleType = command[1];
+				const vehicleNo = command[2];
+				const entryTime = command[3];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(SUCCESS));
+				console.log.restore();
+			});
+
+			it('should log SUCCESS for command BOOK SUV O34 15:00', () => {
+				const command = 'BOOK SUV O34 15:00'.split(' ');
+
+				const vehicleType = command[1];
+				const vehicleNo = command[2];
+				const entryTime = command[3];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(SUCCESS));
+				console.log.restore();
+			});
+
+			it('should log SUCCESS for command BOOK SUV XY4 13:00', () => {
+				const command = 'BOOK SUV XY4 13:00'.split(' ');
+
+				const vehicleType = command[1];
+				const vehicleNo = command[2];
+				const entryTime = command[3];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(SUCCESS));
+				console.log.restore();
+			});
+
+			it('should log RACETRACK_FULL for command BOOK SUV A56 13:10', () => {
+				const command = 'BOOK SUV A56 13:10'.split(' ');
+
+				const vehicleType = command[1];
+				const vehicleNo = command[2];
+				const entryTime = command[3];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.book(vehicleType, vehicleNo, entryTime);
+
+				assert(spy.calledWith(RACETRACK_FULL));
+				console.log.restore();
+			});
+		});
+	});
 });
 
+describe('ADDITIONAL BOOKING', () => {
+	describe('check for INVALID_EXIT_TIME', () => {
+		const racetrack = new Racetrack();
 
+		const [vehicleType, vehicleNo, entryTime] = 'BIKE BIK2 14:00';
 
+		racetrack.book(vehicleType, vehicleNo, entryTime);
 
+		it('when exitTime earlier than BOOKING START TIME (13:00) or its booking entryTime command: ADDITIONAL BIK2 12:50', () => {
+			const command = 'ADDITIONAL BIK2 12:50'.split(' ');
 
+			const spy = sinon.spy(console, 'log');
+
+			racetrack.additional(command[1], command[2]);
+
+			assert(spy.calledWith(INVALID_EXIT_TIME));
+			console.log.restore();
+		});
+
+		it('when exitTime later than its TRACK CLOSING TIME (20:00) command: ADDITIONAL BIK2 20:50', () => {
+			const command = 'ADDITIONAL BIK2 20:50'.split(' ');
+
+			const spy = sinon.spy(console, 'log');
+
+			racetrack.additional(command[1], command[2]);
+
+			assert(spy.calledWith(INVALID_EXIT_TIME));
+			console.log.restore();
+		});
+	});
+
+	describe('check for input parameters', () => {
+		const racetrack = new Racetrack();
+
+		const [vehicleType, vehicleNo, entryTime] = 'BIKE BIK2 14:00';
+
+		racetrack.book(vehicleType, vehicleNo, entryTime);
+
+		describe('when one among vehicleNo, entryTime', () => {
+			it('missing parameter vehicleNo', () => {
+				const command = 'ADDITIONAL BIK2 17:50'.split(' ');
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.additional(undefined, command[2]);
+
+				assert(spy.calledWith(MISSING_REQUIRED_PARAMETERS));
+				console.log.restore();
+			});
+
+			it('missing parameter exitTime', () => {
+				const command = 'ADDITIONAL BIK2 17:50'.split(' ');
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.additional(command[1], undefined);
+
+				assert(spy.calledWith(MISSING_REQUIRED_PARAMETERS));
+				console.log.restore();
+			});
+		});
+
+		// exit time
+
+		//
+	});
+
+	describe('check for additional booking', () => {
+		describe('should log SUCCESS on successful allocation of racetrack else RACETRACK_FULL should be the response', () => {
+			const racetrack = new Racetrack();
+
+			const command1 = 'BOOK SUV A56 13:10'.split(' ');
+			const command2 = 'BOOK SUV XY4 14:20'.split(' ');
+			const command3 = 'BOOK SUV XY3 13:30'.split(' ');
+			const command4 = 'BOOK SUV XY2 16:50'.split(' ');
+
+			racetrack.book(command1[1], command1[2], command1[3]);
+			racetrack.book(command2[1], command2[2], command2[3]);
+			racetrack.book(command3[1], command3[2], command3[3]);
+			racetrack.book(command4[1], command4[2], command4[3]);
+
+			it('should log SUCCESS for command ADDITIONAL XY3 16:40', () => {
+				const command = 'ADDITIONAL XY3 16:40'.split(' ');
+
+				const vehicleNo = command[1];
+				const exitTime = command[2];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.additional(vehicleNo, exitTime);
+
+				assert(spy.calledWith(SUCCESS));
+				console.log.restore();
+			});
+
+			it('should log RACETRACK_FULL for command ADDITIONAL A56 16:55', () => {
+				const command = 'ADDITIONAL A56 16:55'.split(' ');
+
+				const vehicleNo = command[1];
+				const exitTime = command[2];
+
+				const spy = sinon.spy(console, 'log');
+
+				racetrack.additional(vehicleNo, exitTime);
+
+				assert(spy.calledWith(RACETRACK_FULL));
+				console.log.restore();
+			});
+		});
+	});
+});
+
+describe('REVENUE', () => {
+	describe('for these commands/ session BOOK BIKE M40 14:00\nBOOK CAR 034 15:00\nBOOK SUV A66 11:00\nADDITIONAL M40 17:40\nADDITIONAL 034 20:50\n revenue should be 590 0', () => {
+		it('revenue should be 590 0', () => {
+			const command1 = 'BOOK BIKE M40 14:00'.split(' ');
+			const command2 = 'BOOK CAR O34 15:00'.split(' ');
+			const command3 = 'BOOK SUV A66 11:00'.split(' ');
+			const command4 = 'ADDITIONAL M40 17:40'.split(' ');
+			const command5 = 'ADDITIONAL O34 20:50'.split(' ');
+
+			const racetrack = new Racetrack();
+
+			racetrack.book(command1[1], command1[2], command1[3]);
+			racetrack.book(command2[1], command2[2], command2[3]);
+			racetrack.book(command3[1], command3[2], command3[3]);
+			racetrack.additional(command4[1], command4[2]);
+			racetrack.additional(command5[1], command5[2]);
+
+			const spy = sinon.spy(console, 'log');
+
+			racetrack.revenue();
+
+			assert(spy.calledWith('590 0'));
+			console.log.restore();
+		});
+	});
+});

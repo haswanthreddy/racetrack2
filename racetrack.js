@@ -3,7 +3,6 @@ const {
 	BOOKING_START_TIME,
 	BOOKING_END_TIME,
 	MAX_VEHICLES_PER_TRACK,
-	TYPE_OF_VEHICLE,
 	BOOKING_TYPE,
 	ADDITIONAL_END_TIME,
 	COST_PER_HOUR,
@@ -12,6 +11,11 @@ const {
 	DEFAULT_BOOKING_TIME_IN_HOURS,
 	HOURS_IN_A_DAY,
 	MINS_IN_A_HOUR,
+	MISSING_REQUIRED_PARAMETERS,
+	SUCCESS,
+	RACETRACK_FULL,
+	INVALID_ENTRY_TIME,
+	INVALID_EXIT_TIME,
 } = require('./constants');
 
 module.exports = class Racetrack {
@@ -83,17 +87,12 @@ module.exports = class Racetrack {
 
 	book(vehicleType, vehicleNo, entryTime) {
 		if (!(vehicleNo && entryTime && vehicleType)) {
-			console.log('MISSING_REQUIRED _ARGUMENTS');
-			return;
-		}
-
-		if (!TYPE_OF_VEHICLE[vehicleType]) {
-			console.log('INVALID_VEHICLE_TYPE');
+			console.log(MISSING_REQUIRED_PARAMETERS);
 			return;
 		}
 
 		if (this.#checkForInvalidTimeSlot(entryTime, BOOKING_TYPE.BOOKING)) {
-			console.log('INVALID_ENTRY_TIME');
+			console.log(INVALID_ENTRY_TIME);
 			return;
 		}
 
@@ -102,7 +101,7 @@ module.exports = class Racetrack {
 		const trackVacancy = this.#vacancyCheck(vehicleType, entryTime, exitTime);
 
 		if (trackVacancy.regularVehiclesCount < 1 && ((trackVacancy.vipVehiclesCount < 1) || (vehicleType === 'BIKE'))) {
-			console.log('RACETRACK_FULL');
+			console.log(RACETRACK_FULL);
 			return;
 		}
 
@@ -117,17 +116,17 @@ module.exports = class Racetrack {
 
 		this.#bookingData.push(booking);
 
-		console.log('SUCCESS');
+		console.log(SUCCESS);
 	}
 
 	additional(vehicleNo, newExitTime) {
 		if (!(vehicleNo && newExitTime)) {
-			console.log('MISSING REQUIRED ARGUMENTS');
+			console.log('MISSING_REQUIRED_PARAMETERS');
 			return;
 		}
 
 		if (this.#checkForInvalidTimeSlot(newExitTime, BOOKING_TYPE.ADDITIONAL)) {
-			console.log('INVALID_EXIT_TIME');
+			console.log(INVALID_EXIT_TIME);
 			return;
 		}
 
@@ -148,7 +147,7 @@ module.exports = class Racetrack {
 		const trackVacancy = this.#vacancyCheck(vehicleType, exitTime, newExitTime);
 
 		if (trackVacancy.regularVehiclesCount < 1 && ((trackVacancy.vipVehiclesCount < 1) || (vehicleType === 'BIKE'))) {
-			console.log('RACETRACK_FULL');
+			console.log(RACETRACK_FULL);
 			return;
 		}
 
@@ -163,8 +162,7 @@ module.exports = class Racetrack {
 
 		this.#bookingData.push(bookingAddition);
 
-
-		console.log('SUCCESS');
+		console.log(SUCCESS);
 	}
 
 	#revenueFromBooking() {
