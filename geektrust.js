@@ -1,14 +1,13 @@
-/* eslint-disable no-restricted-syntax */
 const fs = require('fs');
 const {
 	BOOK,
 	REVENUE,
 	ADDITIONAL,
 } = require('./constants');
-const RaceTrack = require('./racetrack');
+const Racetrack = require('./racetrack');
 
 const handleInput = (data) => {
-	const racetrackSession = new RaceTrack();
+	const racetrackSession = new Racetrack();
 	for (const input of data) {
 		const commands = input.split(' ');
 
@@ -30,16 +29,3 @@ const handleInput = (data) => {
 const data = fs.readFileSync(process.argv[2], 'utf-8').toString().replace(/\r|/g, '').split('\n');
 
 handleInput(data);
-
-/**
- * , "utf8", (err, data) => {
-    if (err) throw err
-
-    const inputLines = data.toString().split("\n")
-
-    inputLines.forEach((input) => {
-        const inputArr = input.trim().split(' ');
-        handleInput(inputArr)
-    })
-})
- */
